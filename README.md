@@ -30,7 +30,6 @@ Real-time skin lesion segmentation on Android using a PyTorch Mobile model and C
 - Android **7.0+ (API 24+)**
 - Physical device recommended (emulator has limited camera support)
 - Android Studio **Hedgehog or newer**
-- A trained and exported `.ptl` model file (see [Model Setup](#model-setup) below)
 
 ---
 
@@ -39,7 +38,7 @@ Real-time skin lesion segmentation on Android using a PyTorch Mobile model and C
 ```
 app/src/main/
 ├── assets/
-│   └── model.ptl                  # PyTorch Lite model (you provide this)
+│   └── model.ptl                  # Pre-trained PyTorch Lite model (bundled)
 └── java/com/example/skincancerscannerapp/
     ├── MainActivity.kt            # Compose UI, camera setup, permission handling
     └── SegmentationModel.kt       # Model loading, preprocessing, inference
@@ -49,30 +48,24 @@ app/src/main/
 
 ## Model Setup
 
-The model is trained and exported separately. See the training repository:
+A pre-trained `model.ptl` is already bundled in `app/src/main/assets/` and the app works out of the box without any additional steps.
+
+### Replacing the model
+
+If you want to retrain or export a new model, use the dedicated export script from the training repository:
+
 👉 [Persi00/Skin-Lesion-Segmentation](https://github.com/Persi00/Skin-Lesion-Segmentation)
 
-After training, export the model to `.ptl` (PyTorch Lite Interpreter format):
-
-```python
-import torch
-from torch.utils.mobile_optimizer import optimize_for_mobile
-
-model.eval()
-example_input = torch.rand(1, 3, 512, 512)
-traced = torch.jit.trace(model, example_input)
-optimized = optimize_for_mobile(traced)
-optimized._save_for_lite_interpreter("model.ptl")
+```bash
+# In the training repository
+python tomobile.py
 ```
 
-Then place `model.ptl` in:
+This produces a `model.ptl` file. To use it in the app, overwrite the existing file:
 
 ```
 app/src/main/assets/model.ptl
 ```
-
-> **Note:** The `assets/` folder does not exist by default in a new Android Studio project.
-> Create it by right-clicking `app/src/main` → New → Directory → type `assets`.
 
 ### Model parameters
 
@@ -95,13 +88,10 @@ app/src/main/assets/model.ptl
    cd skin-cancer-scanner-app
    ```
 
-2. **Add your model**
-   Copy your exported `model.ptl` to `app/src/main/assets/model.ptl`
-
-3. **Open in Android Studio**
+2. **Open in Android Studio**
    Open the project folder and let Gradle sync.
 
-4. **Run on device**
+3. **Run on device**
    Connect an Android device with USB debugging enabled, select it in the device
    dropdown, and click ▶ Run. Grant camera permission when prompted.
 
@@ -140,7 +130,7 @@ The model returns a dictionary (common with torchvision models like DeepLab/FCN)
 Fix: use `.toDictStringKey()["out"]!!.toTensor()` instead of `.toTensor()` directly.
 
 **App crashes on first launch**
-Make sure `model.ptl` is in `app/src/main/assets/`. The folder must be created manually.
+Make sure `model.ptl` is present in `app/src/main/assets/` and Gradle has synced.
 
 **Preview freezes**
 Ensure `imageProxy.close()` is always called after each frame, even on error (use `finally`).
@@ -153,7 +143,7 @@ exactly match the values used during training.
 
 ## License
 
-Copyright 2026 Franciszek Zachuta
+Copyright 2026 Persi00
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
